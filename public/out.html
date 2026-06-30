@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    body{
+    margin:0;
+    padding:0;
+    width:100%;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#f4f6f9;
+    font-family:Arial, Helvetica, sans-serif;
+}
+.home-page{
+    width:420px;
+    background:#fff;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,.15);
+}
+.home-page h1{
+    text-align:center;
+    margin-bottom:25px;
+    color:#0f766e;
+    font-family:Arial,sans-serif;
+}
+.input-box{
+    position:relative;
+    margin-bottom:18px;
+}
+.input-box input{
+    width:100%;
+    height:48px;
+    border:1px solid #d1d5db;
+    border-radius:12px;
+    padding:0 15px;
+    outline:none;
+    font-size:15px;
+    transition:.25s;
+    background:white;
+}
+
+.input-box input:focus{
+    border-color:#0f766e;
+    box-shadow:0 0 8px rgba(15,118,110,.25);
+}
+.dropdown-list{
+    position:absolute;
+    top:52px;
+    left:0;
+    width:100%;
+    background:white;
+    border:1px solid #ddd;
+    border-radius:12px;
+    max-height:220px;
+    overflow-y:auto;
+    display:none;
+    z-index:999;
+    box-shadow:0 10px 20px rgba(0,0,0,.12);
+}
+.dropdown-item{
+    padding:12px 15px;
+    cursor:pointer;
+    transition:.2s;
+    font-size:15px;
+}
+.dropdown-item:hover{
+    background:#0f766e;
+    color:white;
+}
+.dropdown-item.active{
+    background:#0f766e;
+    color:white;
+}
+.btn-submit{
+    width:100%;
+    height:48px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg,#0f766e,#115e59);
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.25s;
+}
+.btn-submit:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 18px rgba(15,118,110,.30);
+}
+.view-link{
+    display:block;
+    text-align:center;
+    margin-top:14px;
+    text-decoration:none;
+    color:#0f766e;
+    font-weight:bold;
+}
+.view-link:hover{
+    color:#115e59;
+    text-decoration:underline;
+}
+</style>
+<body>
+    <div class="home-page">
+    <h1> HouseSupply - OUT Entry</h1>
+    <div class="input-box customer-box">
+        <input
+            type="text"
+            id="userName"
+            placeholder="Search Customer..."
+            autocomplete="off"
+            oninput="filterCustomers()"
+            onkeydown="customerKey(event)">
+        <div id="customerDropdown" class="dropdown-list"></div>
+    </div>
+    <div class="input-box">
+        <input
+            type="date"
+            id="userDate"
+            onkeydown="moveNext(event,'userSudam')">
+    </div>   
+    <div class="input-box item-box">
+        <input
+            type="text"
+            id="userSudam"
+            placeholder="Search Item..."
+            autocomplete="off"
+            oninput="filterItems()"
+            onkeydown="itemKey(event)">
+        <div id="itemDropdown" class="dropdown-list"></div>
+    </div>
+    <div class="input-box">
+        <input
+            type="number"
+            id="userQty"
+            placeholder="Quantity"
+            min="1"
+            onkeydown="if(event.key==='Enter'){handleSubmit()}">
+    </div>
+    <button
+        class="btn-submit"
+        onclick="handleSubmit()">
+        💾 Save Entry
+    </button>
+    <a href="outtable.html" class="view-link">
+        📋 View OUT Records
+    </a>
+    <a href="balance.html" class="view-link">
+        📊 Current Balance
+    </a>
+    <a href="intable.html" class="view-link">
+        📥 Go to IN Records
+    </a>
+</div>
+<script>
+    let editId = null;
+let customerList = [];
+let itemList = [];
+let customerIndex = -1;
+let itemIndex = -1;
+async function loadCustomers(){
+    try{
+        const res = await fetch("http://localhost:3000/customers");
+
+        customerList = await res.json();
+    }
+    catch(err){
+        console.log(err);
+    }
+}
+async function loadItems(){
+    try{
+        const res = await fetch("http://localhost:3000/items");
+        itemList = await res.json();
+    }
+    catch(err){
+        console.log(err);
+    }
+}
+document.addEventListener("DOMContentLoaded", async ()=>{
+    await loadCustomers();
+    await loadItems();
+    document.getElementById("userName").focus();
+    document.getElementById("userDate").value =
+    new Date().toISOString().split("T")[0];
+});
+function showCustomers(){
+    filterCustomers();
+}
+function filterCustomers() {
+    const keyword = document.getElementById("userName").value
+        .trim()
+        .toLowerCase();
+    const dropdown = document.getElementById("customerDropdown");
+    dropdown.innerHTML = "";
+    customerIndex = -1;
+    if (keyword === "") {
+        dropdown.style.display = "none";
+        return;
+    }
+    const result = customerList.filter(c =>
+        c.name.toLowerCase().includes(keyword)
+    );
+    if (result.length === 0) {
+        dropdown.style.display = "none";
+        return;
+    }
+    result.forEach(c => {
+        dropdown.innerHTML += `
+            <div class="dropdown-item"
+                onclick="selectCustomer('${c.name}')">
+                👤 ${c.name}
+            </div>
+        `;
+    });
+    dropdown.style.display = "block";
+}
+function selectCustomer(name){
+    document.getElementById("userName").value=name;
+    document.getElementById("customerDropdown").style.display="none";
+    document.getElementById("userDate").focus();
+}
+function showItems(){
+    filterItems();
+}
+function filterItems(){
+    const keyword=
+    document.getElementById("userSudam")
+    .value
+    .toLowerCase();
+    const dropdown=
+    document.getElementById("itemDropdown");
+    dropdown.innerHTML="";
+    itemIndex=-1;
+    const result=itemList.filter(i=>
+        i.name.toLowerCase().includes(keyword)
+    );
+    if(result.length==0){
+        dropdown.style.display="none";
+        return;
+    }
+    result.forEach(i=>{
+        dropdown.innerHTML+=`
+        <div class="dropdown-item"
+        onclick="selectItem('${i.name}')">
+        📦 ${i.name}
+        </div>
+        `;
+    });
+    dropdown.style.display="block";
+}
+function selectItem(name){
+    document.getElementById("userSudam").value=name;
+    document.getElementById("itemDropdown").style.display="none";
+    document.getElementById("userQty").focus();
+}
+function customerKey(e){
+    const dropdown=document.getElementById("customerDropdown");
+    const items=dropdown.querySelectorAll(".dropdown-item");
+    if(dropdown.style.display=="none") return;
+    if(e.key==="ArrowDown"){
+        e.preventDefault();
+        if(customerIndex<items.length-1){
+            customerIndex++;
+        }
+    }
+    else if(e.key==="ArrowUp"){
+        e.preventDefault();
+        if(customerIndex>0){
+            customerIndex--;
+        }
+    }
+    else if(e.key==="Enter"){
+        e.preventDefault();
+        if(customerIndex>=0){
+            items[customerIndex].click();
+        }
+        return;
+    }
+    items.forEach(x=>x.classList.remove("active"));
+    if(customerIndex>=0){
+        items[customerIndex].classList.add("active");
+        items[customerIndex].scrollIntoView({
+            block:"nearest"
+        });
+    }
+}
+function itemKey(e){
+    const dropdown=document.getElementById("itemDropdown");
+    const items=dropdown.querySelectorAll(".dropdown-item");
+    if(dropdown.style.display=="none") return;
+    if(e.key==="ArrowDown"){
+        e.preventDefault();
+        if(itemIndex<items.length-1){
+            itemIndex++;
+        }
+    }
+    else if(e.key==="ArrowUp"){
+        e.preventDefault();
+        if(itemIndex>0){
+            itemIndex--;
+        }
+    }
+    else if(e.key==="Enter"){
+        e.preventDefault();
+        if(itemIndex>=0){
+            items[itemIndex].click();
+        }
+        return;
+    }
+    items.forEach(x=>x.classList.remove("active"));
+    if(itemIndex>=0){
+        items[itemIndex].classList.add("active");
+        items[itemIndex].scrollIntoView({
+            block:"nearest"
+        });
+    }
+}
+document.addEventListener("click",function(e){
+    if(!e.target.closest(".customer-box")){
+        document.getElementById("customerDropdown").style.display="none";
+    }
+    if(!e.target.closest(".item-box")){
+        document.getElementById("itemDropdown").style.display="none";
+    }
+});
+function clearForm(){
+    document.getElementById("userName").value="";
+    document.getElementById("userDate").value=
+    new Date().toISOString().split("T")[0];
+    document.getElementById("userSudam").value="";
+    document.getElementById("userQty").value="";
+    editId=null;
+    document.getElementById("userName").focus();
+}
+function moveNext(event,nextId){
+    if(event.key==="Enter"){
+        event.preventDefault();
+        document.getElementById(nextId).focus();
+    }
+}
+async function handleSubmit() {
+    const name = document.getElementById("userName").value.trim();
+    const date = document.getElementById("userDate").value;
+    const sudam = document.getElementById("userSudam").value.trim();
+    const qty = document.getElementById("userQty").value;
+    if (!name || !date || !sudam || !qty) {
+        alert("Please fill all fields.");
+        return;
+    }
+    const data = {
+        name,
+        date,
+        sudam,
+        qty
+    };
+    try {
+      let res;
+        if (editId == null) {
+            res = await fetch("http://localhost:3000/out/add", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+        } else {
+            res = await fetch(`http://localhost:3000/out/update/${editId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+        }
+        const result = await res.json();
+        if (!res.ok) {
+            alert(result.message);
+            return;
+        }
+        alert(result.message || "Saved Successfully");
+        clearForm();
+    } catch (err) {
+        console.log(err);
+        alert("Server Error");
+    }
+}
+</script>
+</body>
+</html>

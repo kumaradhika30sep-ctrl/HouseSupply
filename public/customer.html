@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Customer</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#0f766e,#2563eb);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.container{
+
+    width:500px;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+
+}
+
+h2{
+
+    text-align:center;
+    margin-bottom:20px;
+
+}
+
+input{
+
+    width:100%;
+    height:45px;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    margin-bottom:15px;
+    outline:none;
+
+}
+
+button{
+
+    width:100%;
+    height:45px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#0f766e;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+
+}
+
+button:hover{
+
+    background:#115e59;
+
+}
+
+table{
+
+    width:100%;
+    margin-top:25px;
+    border-collapse:collapse;
+
+}
+
+th{
+
+    background:#0f766e;
+    color:white;
+    padding:10px;
+
+}
+
+td{
+
+    padding:10px;
+    text-align:center;
+    border-bottom:1px solid #ddd;
+
+}
+
+.deleteBtn{
+
+    background:red;
+    color:white;
+    border:none;
+    padding:5px 10px;
+    border-radius:5px;
+    cursor:pointer;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>👤 Customer Master</h2>
+
+<input
+type="text"
+id="customerName"
+placeholder="Enter Customer Name">
+
+<button onclick="saveCustomer()">
+
+Add Customer
+
+</button>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+
+<th>Customer Name</th>
+
+<th>Delete</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tbody">
+
+</tbody>
+
+</table>
+
+</div>
+
+<script>
+
+let editId = null;
+
+document.addEventListener("DOMContentLoaded", loadCustomers);
+
+async function loadCustomers(){
+
+    const res = await fetch("http://localhost:3000/customer/data");
+
+    const data = await res.json();
+
+    const tbody = document.getElementById("tbody");
+
+    tbody.innerHTML = "";
+
+    data.forEach(customer=>{
+
+        tbody.innerHTML += `
+        <tr>
+
+            <td>${customer.id}</td>
+
+            <td>${customer.customer_name}</td>
+
+            <td>
+
+                <button class="editBtn"
+                onclick="editCustomer(${customer.id},'${customer.customer_name}')">
+                Edit
+                </button>
+
+                <button class="deleteBtn"
+                onclick="deleteCustomer(${customer.id})">
+                Delete
+                </button>
+
+            </td>
+
+        </tr>
+        `;
+
+    });
+
+}
+
+async function saveCustomer(){
+
+    const customer_name =
+    document.getElementById("customerName").value.trim();
+
+    if(customer_name==""){
+
+        alert("Enter Customer Name");
+
+        return;
+
+    }
+
+    let url="";
+    let method="";
+
+    if(editId==null){
+
+        url="http://localhost:3000/customer/add";
+
+        method="POST";
+
+    }
+
+    else{
+
+        url=`http://localhost:3000/customer/update/${editId}`;
+
+        method="PUT";
+
+    }
+
+    const res=await fetch(url,{
+
+        method:method,
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+            customer_name
+
+        })
+
+    });
+
+    const data=await res.json();
+
+    alert(data.message);
+
+    document.getElementById("customerName").value="";
+
+    editId=null;
+
+    document.querySelector("button").innerHTML="Add Customer";
+
+    loadCustomers();
+
+}
+
+function editCustomer(id,name){
+
+    editId=id;
+
+    document.getElementById("customerName").value=name;
+
+    document.querySelector("button").innerHTML="Update Customer";
+
+}
+
+async function deleteCustomer(id){
+
+    if(confirm("Delete this customer?")){
+
+        await fetch(
+
+        `http://localhost:3000/customer/delete/${id}`,
+
+        {
+
+            method:"DELETE"
+
+        });
+
+        loadCustomers();
+
+    }
+
+}
+
+document.getElementById("customerName")
+.addEventListener("keypress",function(e){
+
+    if(e.key==="Enter"){
+
+        saveCustomer();
+
+    }
+
+});
+
+</script>
+
+</body>
+
+</html>

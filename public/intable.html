@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HouseSupply-IN Records</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f5f5f5;
+            padding-top: 20px;
+        }
+
+        .top-bar {
+            width: 700px;
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: -5px;
+        }
+
+        .btn-back {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #444, #111);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: opacity 0.2s;
+        }
+
+        .btn-back:hover {
+            opacity: 0.9;
+        }
+
+        .search-box {
+            width: 700px;
+            margin: 20px 0 10px;
+        }
+
+        .search-box input {
+            width: 100%;
+            height: 40px;
+            border: 1px solid #cbd5e1;
+            padding: 10px;
+            border-radius: 10px;
+            outline: none;
+            font-size: 14px;
+            background-color: white;
+        }
+
+        .search-box input:focus {
+            border-color: teal;
+        }
+
+        .display-container {
+            width: 700px;
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid #eef2f5;
+        }
+
+        #stocktable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 1px solid #eef2f5;
+        }
+
+        #stocktable th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 14px 16px;
+            border-bottom: 2px solid #e2e8f0;
+            text-align: center;
+        }
+
+        #stocktable td {
+            padding: 14px 16px;
+            color: #334155;
+            font-size: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s ease;
+            text-align: center;
+        }
+
+        #stocktable tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        #stocktable tbody tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        #stocktable tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .negative-diff {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .positive-diff {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 15px;
+        }
+
+        .pagination button {
+            padding: 6px 12px;
+            border: none;
+            background: teal;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .pagination button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #pageInfo {
+            font-size: 14px;
+            font-weight: bold;
+            color: #475569;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-bar">
+    <a href="dashboard.html" class="btn-back">← Back to Dashboard</a>
+</div>
+<div class="display-container" style="margin-bottom:20px;">
+
+    <h2 style="margin-bottom:15px;">Receive Material</h2>
+
+    <div class="search-box" style="width:100%;margin:0;">
+        <input type="text" id="receiveName" placeholder="Customer Name" readonly>
+    </div>
+
+    <div class="search-box" style="width:100%;margin-top:10px;">
+        <input type="text" id="receiveItem" placeholder="Item" readonly>
+    </div>
+
+    <div class="search-box" style="width:100%;margin-top:10px;">
+        <input type="date" id="receiveDate">
+    </div>
+
+    <div class="search-box" style="width:100%;margin-top:10px;">
+       <input
+    type="number"
+    id="receiveQty"
+    placeholder="Receive Qty"
+    onkeydown="submitOnEnter(event)">
+    </div>
+
+    <button class="btn-back"
+            style="margin-top:15px;"
+            onclick="submitReceive()">
+        Submit
+    </button>
+
+</div>
+
+<div class="search-box">
+    ...
+</div>
+
+<div class="display-container">
+    <table id="stocktable">
+        <thead>
+            <tr>
+                <th>CustomerName</th>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Days Taken</th>
+                <th>Qty Difference</th>
+            </tr>
+        </thead>
+        <tbody id="tablebody"></tbody>
+    </table>
+
+    <div class="pagination">
+        <button id="btnPrev" onclick="changePage(-1)">Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="btnNext" onclick="changePage(1)">Next</button>
+    </div>
+    <button class="btn-back"
+        style="margin-top:15px;"
+        onclick="submitReceive()">
+    Submit
+</button>
+</div>
+
+<script>
+let filteredData = [];
+let currentPage = 1;
+const rowsPerPage = 7;
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const name = params.get("name");
+    const item = params.get("item");
+    document.getElementById("receiveName").value = name || "";
+    document.getElementById("receiveItem").value = item || "";
+    document.getElementById("receiveDate").value =
+        new Date().toISOString().split("T")[0];
+
+    refreshAllData();
+
+});
+
+async function refreshAllData() {
+    await loadCustomerNames();
+    await displayTable();
+}
+
+async function loadCustomerNames() {
+    try {
+        const res = await fetch('http://localhost:3000/out/data');
+        const data = await res.json();
+
+        const customerList = document.getElementById('customerList');
+        const uniqueNames = [...new Set(data.map(item => item.name))];
+
+        customerList.innerHTML = uniqueNames.map(name => `<option value="${name}">`).join('');
+    } catch (error) {
+        console.error("Error loading customer list options:", error);
+    }
+}
+
+async function displayTable(){
+    try {
+        const res = await fetch('http://localhost:3000/in/data');
+        filteredData = await res.json();
+        currentPage = 1;
+        renderRows();
+    } catch (error) {
+        console.error("Error displaying table data:", error);
+    }
+}
+
+async function searchData() {
+    const searchValue = document.getElementById('searchName').value.trim().toLowerCase();
+
+    const res = await fetch('http://localhost:3000/in/data');
+    const data = await res.json();
+
+    if (searchValue === "") {
+        filteredData = data;
+    } else {
+        filteredData = data.filter(item => item.name.toLowerCase().includes(searchValue));
+    }
+
+    currentPage = 1;
+    renderRows();
+}
+
+function renderRows() {
+    const tablebody = document.getElementById('tablebody');
+    tablebody.innerHTML = "";
+
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage) || 1;
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const paginatedItems = filteredData.slice(startIndex, endIndex);
+
+    paginatedItems.forEach(item => {
+        let diffClass = "";
+        if(item.qty_difference !== null && item.qty_difference !== undefined) {
+            diffClass = item.qty_difference < 0 ? "negative-diff" : (item.qty_difference > 0 ? "positive-diff" : "");
+        }
+
+        tablebody.innerHTML += `
+        <tr>
+            <td><strong>${item.name}</strong></td>
+            <td>${item.date ? item.date.split('T')[0] : '-'}</td>
+            <td>${item.sudam}</td>
+            <td>${item.qty}</td>
+            <td>${item.days_taken ?? '-'}</td>
+            <td class="${diffClass}">${item.qty_difference ?? '-'}</td>
+        </tr>`;
+    });
+
+    document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById('btnPrev').disabled = (currentPage === 1);
+    document.getElementById('btnNext').disabled = (currentPage === totalPages);
+}
+
+function changePage(direction) {
+    currentPage += direction;
+    renderRows();
+}
+
+async function submitReceive() {
+
+    const name = document.getElementById("receiveName").value;
+    const sudam = document.getElementById("receiveItem").value;
+    const date = document.getElementById("receiveDate").value;
+    const qty = document.getElementById("receiveQty").value;
+
+    if (!date || !qty) {
+        alert("Please enter Date and Quantity");
+        return;
+    }
+
+    try {
+
+        const response = await fetch("http://localhost:3000/in/add", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                name,
+                date,
+                sudam,
+                qty
+            })
+
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+
+    alert(result.message);
+
+    document.getElementById("receiveName").value = "";
+    document.getElementById("receiveItem").value = "";
+    document.getElementById("receiveQty").value = "";
+    document.getElementById("receiveDate").value =
+        new Date().toISOString().split("T")[0];
+
+    window.history.replaceState({}, "", "intable.html");
+
+    refreshAllData();
+
+
+
+        } else {
+
+            alert(result.message);
+
+        }
+
+    } catch (err) {
+
+        console.log(err);
+
+        alert("Server Error");
+
+    }
+
+}
+function submitOnEnter(event) {
+
+    if (event.key === "Enter") {
+
+        event.preventDefault();
+
+        submitReceive();
+
+    }
+
+}
+</script>
+</body>
+</html>

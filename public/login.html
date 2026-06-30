@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HouseSupply - Login</title>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial,sans-serif;
+        }
+
+        body{
+            background:#f5f5f5;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            min-height:100vh;
+            padding:20px;
+        }
+
+        .login-container{
+            width:400px;
+            background:#fff;
+            padding:40px 30px;
+            border-radius:16px;
+            box-shadow:0 10px 25px rgba(0,0,0,.05);
+            border:1px solid #eef2f5;
+            text-align:center;
+        }
+
+        .login-header h2{
+            color:#1e293b;
+            font-size:34px;
+            margin-bottom:25px;
+            font-weight:bold;
+        }
+
+        .form-group{
+            margin-bottom:20px;
+            text-align:left;
+        }
+
+        .form-group label{
+            display:block;
+            margin-bottom:8px;
+            color:#475569;
+            font-size:13px;
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:.5px;
+        }
+
+        .form-group input{
+            width:100%;
+            height:50px;
+            border:1px solid #cbd5e1;
+            padding:12px 15px;
+            border-radius:10px;
+            outline:none;
+            font-size:15px;
+            background:#f8fafc;
+            transition:.2s;
+        }
+
+        .form-group input:focus{
+            border-color:teal;
+            background:#fff;
+            box-shadow:0 0 0 3px rgba(0,128,128,.1);
+        }
+
+        .password-container{
+            position:relative;
+        }
+
+        .password-container input{
+            padding-right:45px;
+        }
+
+        .toggle-password{
+            position:absolute;
+            top:50%;
+            right:15px;
+            transform:translateY(-50%);
+            cursor:pointer;
+            color:#666;
+            font-size:18px;
+        }
+
+        .toggle-password:hover{
+            color:teal;
+        }
+
+        .btn-login{
+            width:100%;
+            height:48px;
+            margin-top:10px;
+            border:none;
+            border-radius:10px;
+            background:linear-gradient(135deg,#444,#111);
+            color:#fff;
+            font-size:16px;
+            font-weight:bold;
+            cursor:pointer;
+            transition:.3s;
+        }
+
+        .btn-login:hover{
+            opacity:.9;
+        }
+
+        .error-message{
+            display:none;
+            color:#dc2626;
+            background:#fee2e2;
+            padding:12px;
+            border-radius:8px;
+            font-size:14px;
+            margin-bottom:20px;
+            font-weight:bold;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="login-container">
+    <div class="login-header">
+        <h2>HouseSupply</h2>
+    </div>
+    <div id="errorMessage" class="error-message"></div>
+    <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+            <label>Username</label>
+            <input
+                type="text"
+                id="username"
+                placeholder="Enter username"
+                required
+                autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <div class="password-container">
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter password"
+                    required
+                    autocomplete="current-password">
+                <span class="toggle-password" onclick="togglePassword()">
+                    <i id="eyeIcon" class="fa-solid fa-eye"></i>
+                </span>
+            </div>
+        </div>
+        <button class="btn-login" type="submit">
+            Sign In
+        </button>
+    </form>
+</div>
+<script>
+function togglePassword(){
+    const password=document.getElementById("password");
+    const eye=document.getElementById("eyeIcon");
+    if(password.type==="password"){
+        password.type="text";
+        eye.classList.remove("fa-eye");
+        eye.classList.add("fa-eye-slash");
+    }else{
+        password.type="password";
+        eye.classList.remove("fa-eye-slash");
+        eye.classList.add("fa-eye");
+    }
+}
+async function handleLogin(event){
+    event.preventDefault();
+    const usernameInput=document.getElementById('username').value;
+    const passwordInput=document.getElementById('password').value;
+    const errorDiv=document.getElementById('errorMessage');
+    errorDiv.style.display='none';
+    try{
+        const response=await fetch('http://localhost:3000/auth/login',{
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify({
+                username:usernameInput,
+                password:passwordInput
+            })
+        });
+        const data=await response.json();
+        if(response.ok){
+            alert("Login successful!");
+            window.location.href='dashboard.html';
+        }else{
+            alert("Invalid username or password.");
+        }
+    }catch(error){
+        console.error(error);
+        errorDiv.innerText="Error connecting to server. Please ensure Node backend is running.";
+        errorDiv.style.display='block';
+    }
+}
+</script>
+</body>
+</html>
