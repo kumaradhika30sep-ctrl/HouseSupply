@@ -14,11 +14,11 @@ app.get('/', (req, res) => {
 });
 
 const db = mysql.createConnection({
-    host: process.env.MYSQLHOST,
-    user: process.env.MYSQLUSER,
-    password: process.env.MYSQLPASSWORD,
-    database: process.env.MYSQLDATABASE,
-    port: process.env.MYSQLPORT
+    host: "localhost",
+    user: "root",
+    password: "Harish@2006",   
+    database: "homesupply",
+    port: 3306
 });
 
 db.connect((err) => {
