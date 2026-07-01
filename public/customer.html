@@ -4,304 +4,295 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Add Customer</title>
-
 <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+    }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,sans-serif;
-}
+    body {
+        background: linear-gradient(135deg, #0f766e, #2563eb);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
 
-body{
-    background:linear-gradient(135deg,#0f766e,#2563eb);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-}
+    .container {
+        width: 600px;
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    }
 
-.container{
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #1e293b;
+    }
 
-    width:500px;
-    background:white;
-    padding:30px;
-    border-radius:15px;
-    box-shadow:0 10px 30px rgba(0,0,0,.2);
+    .form-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
 
-}
+    input {
+        flex: 1;
+        height: 45px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        outline: none;
+        font-size: 15px;
+    }
 
-h2{
+    input:focus {
+        border-color: #0f766e;
+    }
 
-    text-align:center;
-    margin-bottom:20px;
+    .btn-main {
+        width: 140px;
+        height: 45px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #0f766e;
+        color: white;
+        font-size: 15px;
+        font-weight: bold;
+        transition: background 0.2s;
+    }
 
-}
+    .btn-main:hover {
+        background: #115e59;
+    }
 
-input{
+    table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+    }
 
-    width:100%;
-    height:45px;
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    margin-bottom:15px;
-    outline:none;
+    th {
+        background: #0f766e;
+        color: white;
+        padding: 12px 10px;
+        font-size: 14px;
+    }
 
-}
+    td {
+        padding: 10px;
+        text-align: center;
+        border-bottom: 1px solid #ddd;
+        color: #334155;
+        font-size: 14px;
+    }
 
-button{
+    tr:hover {
+        background: #f8fafc;
+    }
 
-    width:100%;
-    height:45px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    background:#0f766e;
-    color:white;
-    font-size:16px;
-    font-weight:bold;
+    .editBtn {
+        background: #f59e0b;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-right: 4px;
+        font-weight: bold;
+    }
 
-}
+    .deleteBtn {
+        background: #dc2626;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
 
-button:hover{
+    .back {
+        display: inline-block;
+        margin-top: 25px;
+        text-decoration: none;
+        background: #333;
+        color: white;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 14px;
+        transition: opacity 0.2s;
+    }
 
-    background:#115e59;
-
-}
-
-table{
-
-    width:100%;
-    margin-top:25px;
-    border-collapse:collapse;
-
-}
-
-th{
-
-    background:#0f766e;
-    color:white;
-    padding:10px;
-
-}
-
-td{
-
-    padding:10px;
-    text-align:center;
-    border-bottom:1px solid #ddd;
-
-}
-
-.deleteBtn{
-
-    background:red;
-    color:white;
-    border:none;
-    padding:5px 10px;
-    border-radius:5px;
-    cursor:pointer;
-
-}
-
+    .back:hover {
+        opacity: 0.9;
+    }
 </style>
-
 </head>
-
 <body>
 
 <div class="container">
+    <h2>👤 Customer Master</h2>
+    
+    <div class="form-group">
+        <input type="text" id="customerName" placeholder="Enter Customer Name">
+        <button class="btn-main" id="submitBtn">Add Customer</button>
+    </div>
 
-<h2>👤 Customer Master</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Customer Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+    </table>
 
-<input
-type="text"
-id="customerName"
-placeholder="Enter Customer Name">
-
-<button onclick="saveCustomer()">
-
-Add Customer
-
-</button>
-
-<table>
-
-<thead>
-
-<tr>
-
-<th>ID</th>
-
-<th>Customer Name</th>
-
-<th>Delete</th>
-
-</tr>
-
-</thead>
-
-<tbody id="tbody">
-
-</tbody>
-
-</table>
-
+    <a href="dashboard.html" class="back">← Back</a>
 </div>
 
-<script>
+<!-- Firebase Modular Architecture Core Engines -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+        getFirestore, 
+        collection, 
+        addDoc, 
+        getDocs, 
+        doc, 
+        updateDoc, 
+        deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-let editId = null;
+    // Insert your environment keys here
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
 
-document.addEventListener("DOMContentLoaded", loadCustomers);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-async function loadCustomers(){
+    let editId = null;
 
-    const res = await fetch("http://localhost:3000/customer/data");
+    // Lifecyle initial trace setup
+    document.addEventListener("DOMContentLoaded", loadCustomers);
+    document.getElementById("submitBtn").addEventListener("click", saveCustomer);
 
-    const data = await res.json();
-
-    const tbody = document.getElementById("tbody");
-
-    tbody.innerHTML = "";
-
-    data.forEach(customer=>{
-
-        tbody.innerHTML += `
-        <tr>
-
-            <td>${customer.id}</td>
-
-            <td>${customer.customer_name}</td>
-
-            <td>
-
-                <button class="editBtn"
-                onclick="editCustomer(${customer.id},'${customer.customer_name}')">
-                Edit
-                </button>
-
-                <button class="deleteBtn"
-                onclick="deleteCustomer(${customer.id})">
-                Delete
-                </button>
-
-            </td>
-
-        </tr>
-        `;
-
+    document.getElementById("customerName").addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            saveCustomer();
+        }
     });
 
-}
+    // Extract records down from customers collection paths
+    async function loadCustomers() {
+        try {
+            const querySnapshot = await getDocs(collection(db, "customers"));
+            const tbody = document.getElementById("tbody");
+            tbody.innerHTML = "";
 
-async function saveCustomer(){
+            querySnapshot.forEach((docSnap) => {
+                const customer = docSnap.data();
+                const id = docSnap.id;
 
-    const customer_name =
-    document.getElementById("customerName").value.trim();
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><code>${id.substring(0, 8)}...</code></td>
+                    <td>${customer.customer_name}</td>
+                    <td>
+                        <button class="editBtn" data-id="${id}" data-name="${customer.customer_name}">Edit</button>
+                        <button class="deleteBtn" data-id="${id}">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
 
-    if(customer_name==""){
+            // Scrape bindings out across non-global namespaces
+            document.querySelectorAll(".editBtn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    editCustomer(e.target.getAttribute("data-id"), e.target.getAttribute("data-name"));
+                });
+            });
 
-        alert("Enter Customer Name");
+            document.querySelectorAll(".deleteBtn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    deleteCustomer(e.target.getAttribute("data-id"));
+                });
+            });
 
-        return;
-
+        } catch (error) {
+            console.error("Firestore loading operations exception error: ", error);
+        }
     }
 
-    let url="";
-    let method="";
+    // Write structural changes or make appends
+    async function saveCustomer() {
+        const inputField = document.getElementById("customerName");
+        const customer_name = inputField.value.trim();
 
-    if(editId==null){
+        if (customer_name === "") {
+            alert("Enter Customer Name");
+            return;
+        }
 
-        url="http://localhost:3000/customer/add";
+        try {
+            if (editId === null) {
+                await addDoc(collection(db, "customers"), {
+                    customer_name: customer_name
+                });
+                alert("Customer saved successfully!");
+            } else {
+                const docRef = doc(db, "customers", editId);
+                await updateDoc(docRef, {
+                    customer_name: customer_name
+                });
+                alert("Customer updated successfully!");
+            }
 
-        method="POST";
+            inputField.value = "";
+            editId = null;
+            document.getElementById("submitBtn").innerHTML = "Add Customer";
+            loadCustomers();
 
+        } catch (error) {
+            console.error("Error committing database writes operations: ", error);
+            alert("Failed to commit target adjustments.");
+        }
     }
 
-    else{
-
-        url=`http://localhost:3000/customer/update/${editId}`;
-
-        method="PUT";
-
+    // Swap states configs values to trigger changes logic layouts
+    function editCustomer(id, name) {
+        editId = id;
+        document.getElementById("customerName").value = name;
+        document.getElementById("submitBtn").innerHTML = "Update Customer";
+        document.getElementById("customerName").focus();
     }
 
-    const res=await fetch(url,{
-
-        method:method,
-
-        headers:{
-            "Content-Type":"application/json"
-        },
-
-        body:JSON.stringify({
-
-            customer_name
-
-        })
-
-    });
-
-    const data=await res.json();
-
-    alert(data.message);
-
-    document.getElementById("customerName").value="";
-
-    editId=null;
-
-    document.querySelector("button").innerHTML="Add Customer";
-
-    loadCustomers();
-
-}
-
-function editCustomer(id,name){
-
-    editId=id;
-
-    document.getElementById("customerName").value=name;
-
-    document.querySelector("button").innerHTML="Update Customer";
-
-}
-
-async function deleteCustomer(id){
-
-    if(confirm("Delete this customer?")){
-
-        await fetch(
-
-        `http://localhost:3000/customer/delete/${id}`,
-
-        {
-
-            method:"DELETE"
-
-        });
-
-        loadCustomers();
-
+    // Drop tracking targets
+    async function deleteCustomer(id) {
+        if (confirm("Delete this customer?")) {
+            try {
+                await deleteDoc(doc(db, "customers", id));
+                loadCustomers();
+            } catch (error) {
+                console.error("Error executing tracking clearance updates: ", error);
+            }
+        }
     }
-
-}
-
-document.getElementById("customerName")
-.addEventListener("keypress",function(e){
-
-    if(e.key==="Enter"){
-
-        saveCustomer();
-
-    }
-
-});
-
 </script>
-
 </body>
-
 </html>

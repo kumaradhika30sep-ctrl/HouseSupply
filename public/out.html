@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>HouseSupply - OUT Entry</title>
 </head>
 <style>
     body{
@@ -159,239 +159,219 @@
         📥 Go to IN Records
     </a>
 </div>
-<script>
-    let editId = null;
-let customerList = [];
-let itemList = [];
-let customerIndex = -1;
-let itemIndex = -1;
-async function loadCustomers(){
-    try{
-        const res = await fetch("http://localhost:3000/customers");
 
-        customerList = await res.json();
-    }
-    catch(err){
-        console.log(err);
-    }
-}
-async function loadItems(){
-    try{
-        const res = await fetch("http://localhost:3000/items");
-        itemList = await res.json();
-    }
-    catch(err){
-        console.log(err);
-    }
-}
-document.addEventListener("DOMContentLoaded", async ()=>{
-    await loadCustomers();
-    await loadItems();
-    document.getElementById("userName").focus();
-    document.getElementById("userDate").value =
-    new Date().toISOString().split("T")[0];
-});
-function showCustomers(){
-    filterCustomers();
-}
-function filterCustomers() {
-    const keyword = document.getElementById("userName").value
-        .trim()
-        .toLowerCase();
-    const dropdown = document.getElementById("customerDropdown");
-    dropdown.innerHTML = "";
-    customerIndex = -1;
-    if (keyword === "") {
-        dropdown.style.display = "none";
-        return;
-    }
-    const result = customerList.filter(c =>
-        c.name.toLowerCase().includes(keyword)
-    );
-    if (result.length === 0) {
-        dropdown.style.display = "none";
-        return;
-    }
-    result.forEach(c => {
-        dropdown.innerHTML += `
-            <div class="dropdown-item"
-                onclick="selectCustomer('${c.name}')">
-                👤 ${c.name}
-            </div>
-        `;
-    });
-    dropdown.style.display = "block";
-}
-function selectCustomer(name){
-    document.getElementById("userName").value=name;
-    document.getElementById("customerDropdown").style.display="none";
-    document.getElementById("userDate").focus();
-}
-function showItems(){
-    filterItems();
-}
-function filterItems(){
-    const keyword=
-    document.getElementById("userSudam")
-    .value
-    .toLowerCase();
-    const dropdown=
-    document.getElementById("itemDropdown");
-    dropdown.innerHTML="";
-    itemIndex=-1;
-    const result=itemList.filter(i=>
-        i.name.toLowerCase().includes(keyword)
-    );
-    if(result.length==0){
-        dropdown.style.display="none";
-        return;
-    }
-    result.forEach(i=>{
-        dropdown.innerHTML+=`
-        <div class="dropdown-item"
-        onclick="selectItem('${i.name}')">
-        📦 ${i.name}
-        </div>
-        `;
-    });
-    dropdown.style.display="block";
-}
-function selectItem(name){
-    document.getElementById("userSudam").value=name;
-    document.getElementById("itemDropdown").style.display="none";
-    document.getElementById("userQty").focus();
-}
-function customerKey(e){
-    const dropdown=document.getElementById("customerDropdown");
-    const items=dropdown.querySelectorAll(".dropdown-item");
-    if(dropdown.style.display=="none") return;
-    if(e.key==="ArrowDown"){
-        e.preventDefault();
-        if(customerIndex<items.length-1){
-            customerIndex++;
-        }
-    }
-    else if(e.key==="ArrowUp"){
-        e.preventDefault();
-        if(customerIndex>0){
-            customerIndex--;
-        }
-    }
-    else if(e.key==="Enter"){
-        e.preventDefault();
-        if(customerIndex>=0){
-            items[customerIndex].click();
-        }
-        return;
-    }
-    items.forEach(x=>x.classList.remove("active"));
-    if(customerIndex>=0){
-        items[customerIndex].classList.add("active");
-        items[customerIndex].scrollIntoView({
-            block:"nearest"
-        });
-    }
-}
-function itemKey(e){
-    const dropdown=document.getElementById("itemDropdown");
-    const items=dropdown.querySelectorAll(".dropdown-item");
-    if(dropdown.style.display=="none") return;
-    if(e.key==="ArrowDown"){
-        e.preventDefault();
-        if(itemIndex<items.length-1){
-            itemIndex++;
-        }
-    }
-    else if(e.key==="ArrowUp"){
-        e.preventDefault();
-        if(itemIndex>0){
-            itemIndex--;
-        }
-    }
-    else if(e.key==="Enter"){
-        e.preventDefault();
-        if(itemIndex>=0){
-            items[itemIndex].click();
-        }
-        return;
-    }
-    items.forEach(x=>x.classList.remove("active"));
-    if(itemIndex>=0){
-        items[itemIndex].classList.add("active");
-        items[itemIndex].scrollIntoView({
-            block:"nearest"
-        });
-    }
-}
-document.addEventListener("click",function(e){
-    if(!e.target.closest(".customer-box")){
-        document.getElementById("customerDropdown").style.display="none";
-    }
-    if(!e.target.closest(".item-box")){
-        document.getElementById("itemDropdown").style.display="none";
-    }
-});
-function clearForm(){
-    document.getElementById("userName").value="";
-    document.getElementById("userDate").value=
-    new Date().toISOString().split("T")[0];
-    document.getElementById("userSudam").value="";
-    document.getElementById("userQty").value="";
-    editId=null;
-    document.getElementById("userName").focus();
-}
-function moveNext(event,nextId){
-    if(event.key==="Enter"){
-        event.preventDefault();
-        document.getElementById(nextId).focus();
-    }
-}
-async function handleSubmit() {
-    const name = document.getElementById("userName").value.trim();
-    const date = document.getElementById("userDate").value;
-    const sudam = document.getElementById("userSudam").value.trim();
-    const qty = document.getElementById("userQty").value;
-    if (!name || !date || !sudam || !qty) {
-        alert("Please fill all fields.");
-        return;
-    }
-    const data = {
-        name,
-        date,
-        sudam,
-        qty
+<!-- Import Firebase Modules via CDN -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Your Firebase configuration object (Get this from Firebase Console)
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
     };
-    try {
-      let res;
-        if (editId == null) {
-            res = await fetch("http://localhost:3000/out/add", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
+
+    // Initialize Firebase and Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Global variables tied to window scope for HTML attribute access
+    window.editId = null;
+    window.customerList = [];
+    window.itemList = [];
+    window.customerIndex = -1;
+    window.itemIndex = -1;
+
+    // Fetch customers from Firestore "customers" collection
+    async function loadCustomers(){
+        try{
+            const querySnapshot = await getDocs(collection(db, "customers"));
+            window.customerList = [];
+            querySnapshot.forEach((doc) => {
+                window.customerList.push({ id: doc.id, ...doc.data() });
             });
-        } else {
-            res = await fetch(`http://localhost:3000/out/update/${editId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
-            });
+        } catch(err){
+            console.error("Error loading customers: ", err);
         }
-        const result = await res.json();
-        if (!res.ok) {
-            alert(result.message);
+    }
+
+    // Fetch items from Firestore "items" collection
+    async function loadItems(){
+        try{
+            const querySnapshot = await getDocs(collection(db, "items"));
+            window.itemList = [];
+            querySnapshot.forEach((doc) => {
+                window.itemList.push({ id: doc.id, ...doc.data() });
+            });
+        } catch(err){
+            console.error("Error loading items: ", err);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", async ()=>{
+        await loadCustomers();
+        await loadItems();
+        document.getElementById("userName").focus();
+        document.getElementById("userDate").value = new Date().toISOString().split("T")[0];
+    });
+
+    // Make functions globally accessible to standard HTML inline event handlers
+    window.filterCustomers = function() {
+        const keyword = document.getElementById("userName").value.trim().toLowerCase();
+        const dropdown = document.getElementById("customerDropdown");
+        dropdown.innerHTML = "";
+        window.customerIndex = -1;
+        if (keyword === "") {
+            dropdown.style.display = "none";
             return;
         }
-        alert(result.message || "Saved Successfully");
-        clearForm();
-    } catch (err) {
-        console.log(err);
-        alert("Server Error");
+        const result = window.customerList.filter(c => c.name.toLowerCase().includes(keyword));
+        if (result.length === 0) {
+            dropdown.style.display = "none";
+            return;
+        }
+        result.forEach(c => {
+            dropdown.innerHTML += `
+                <div class="dropdown-item" onclick="selectCustomer('${c.name}')">
+                    👤 ${c.name}
+                </div>
+            `;
+        });
+        dropdown.style.display = "block";
     }
-}
+
+    window.selectCustomer = function(name){
+        document.getElementById("userName").value = name;
+        document.getElementById("customerDropdown").style.display = "none";
+        document.getElementById("userDate").focus();
+    }
+
+    window.filterItems = function(){
+        const keyword = document.getElementById("userSudam").value.toLowerCase();
+        const dropdown = document.getElementById("itemDropdown");
+        dropdown.innerHTML = "";
+        window.itemIndex = -1;
+        const result = window.itemList.filter(i => i.name.toLowerCase().includes(keyword));
+        if(result.length == 0){
+            dropdown.style.display = "none";
+            return;
+        }
+        result.forEach(i => {
+            dropdown.innerHTML += `
+                <div class="dropdown-item" onclick="selectItem('${i.name}')">
+                    📦 ${i.name}
+                </div>
+            `;
+        });
+        dropdown.style.display = "block";
+    }
+
+    window.selectItem = function(name){
+        document.getElementById("userSudam").value = name;
+        document.getElementById("itemDropdown").style.display = "none";
+        document.getElementById("userQty").focus();
+    }
+
+    window.customerKey = function(e){
+        const dropdown = document.getElementById("customerDropdown");
+        const items = dropdown.querySelectorAll(".dropdown-item");
+        if(dropdown.style.display == "none") return;
+        if(e.key === "ArrowDown"){
+            e.preventDefault();
+            if(window.customerIndex < items.length - 1){ window.customerIndex++; }
+        } else if(e.key === "ArrowUp"){
+            e.preventDefault();
+            if(window.customerIndex > 0){ window.customerIndex--; }
+        } else if(e.key === "Enter"){
+            e.preventDefault();
+            if(window.customerIndex >= 0){ items[window.customerIndex].click(); }
+            return;
+        }
+        items.forEach(x => x.classList.remove("active"));
+        if(window.customerIndex >= 0){
+            items[window.customerIndex].classList.add("active");
+            items[window.customerIndex].scrollIntoView({ block: "nearest" });
+        }
+    }
+
+    window.itemKey = function(e){
+        const dropdown = document.getElementById("itemDropdown");
+        const items = dropdown.querySelectorAll(".dropdown-item");
+        if(dropdown.style.display == "none") return;
+        if(e.key === "ArrowDown"){
+            e.preventDefault();
+            if(window.itemIndex < items.length - 1){ window.itemIndex++; }
+        } else if(e.key === "ArrowUp"){
+            e.preventDefault();
+            if(window.itemIndex > 0){ window.itemIndex--; }
+        } else if(e.key === "Enter"){
+            e.preventDefault();
+            if(window.itemIndex >= 0){ items[window.itemIndex].click(); }
+            return;
+        }
+        items.forEach(x => x.classList.remove("active"));
+        if(window.itemIndex >= 0){
+            items[window.itemIndex].classList.add("active");
+            items[window.itemIndex].scrollIntoView({ block: "nearest" });
+        }
+    }
+
+    document.addEventListener("click", function(e){
+        if(!e.target.closest(".customer-box")){ document.getElementById("customerDropdown").style.display = "none"; }
+        if(!e.target.closest(".item-box")){ document.getElementById("itemDropdown").style.display = "none"; }
+    });
+
+    window.clearForm = function(){
+        document.getElementById("userName").value = "";
+        document.getElementById("userDate").value = new Date().toISOString().split("T")[0];
+        document.getElementById("userSudam").value = "";
+        document.getElementById("userQty").value = "";
+        window.editId = null;
+        document.getElementById("userName").focus();
+    }
+
+    window.moveNext = function(event, nextId){
+        if(event.key === "Enter"){
+            event.preventDefault();
+            document.getElementById(nextId).focus();
+        }
+    }
+
+    // Handles Adding or Updating data into Firestore "out_records" collection
+    window.handleSubmit = async function() {
+        const name = document.getElementById("userName").value.trim();
+        const date = document.getElementById("userDate").value;
+        const sudam = document.getElementById("userSudam").value.trim();
+        const qty = Number(document.getElementById("userQty").value);
+
+        if (!name || !date || !sudam || !qty) {
+            alert("Please fill all fields.");
+            return;
+        }
+
+        const data = { name, date, sudam, qty, timestamp: new Date() };
+
+        try {
+            if (window.editId == null) {
+                // Equivalent to an INSERT SQL Query
+                await addDoc(collection(db, "out_records"), data);
+                alert("Entry Added Successfully!");
+            } else {
+                // Equivalent to an UPDATE SQL Query
+                const recordRef = doc(db, "out_records", window.editId);
+                await updateDoc(recordRef, data);
+                alert("Entry Updated Successfully!");
+            }
+            window.clearForm();
+        } catch (err) {
+            console.error(err);
+            alert("Firebase Database Error");
+        }
+    }
 </script>
 </body>
 </html>
