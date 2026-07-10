@@ -141,8 +141,11 @@ body{
 <div class="display-container">
 
 <table id="stocktable">
+
 <thead>
+
 <tr>
+
 <th>Customer</th>
 <th>Date</th>
 <th>Item</th>
@@ -151,148 +154,207 @@ body{
 <th>Pending</th>
 <th>Status</th>
 <th>Action</th>
+
 </tr>
+
 </thead>
-<tbody id="tablebody"></tbody>
+
+<tbody id="tablebody">
+
+</tbody>
+
 </table>
 
 <div class="pagination">
-<button id="btnPrev" onclick="changePage(-1)">Previous</button>
-<span id="pageInfo">Page 1</span>
-<button id="btnNext" onclick="changePage(1)">Next</button>
-</div>
+
+<button id="btnPrev"
+onclick="changePage(-1)">
+Previous
+</button>
+
+<span id="pageInfo">
+Page 1
+</span>
+
+<button id="btnNext"
+onclick="changePage(1)">
+Next
+</button>
 
 </div>
 
-<!-- Firebase Modules -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+</div>
 
-    // Your Firebase Configuration (Keep this identical across all project pages)
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+<script>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+let filteredData=[];
+let currentPage=1;
+const rowsPerPage=8;
+document.addEventListener("DOMContentLoaded", displayTable);
 
-    // Maintain local state arrays matching your original logic
-    let rawCloudData = [];
-    window.filteredData = [];
-    window.currentPage = 1;
-    const rowsPerPage = 8;
+async function displayTable() {
 
-    // Fetch master list from Firestore
-    async function displayTable() {
-        try {
-            const querySnapshot = await getDocs(collection(db, "out_records"));
-            rawCloudData = [];
-            querySnapshot.forEach((doc) => {
-                // doc.id replaces your MySQL 'id' auto-increment number with a unique string hash
-                rawCloudData.push({ id: doc.id, ...doc.data() });
-            });
-            
-            window.filteredData = [...rawCloudData];
-            window.currentPage = 1;
-            renderRows();
-        } catch (err) {
-            console.error("Error reading out_records: ", err);
+    const res = await fetch("http://localhost:3000/out/data");
+    filteredData = await res.json();
+
+    currentPage = 1;
+    renderRows();
+}
+
+async function searchData() {
+
+    const searchValue =
+        document.getElementById("searchName")
+        .value
+        .toLowerCase();
+
+    const res = await fetch("http://localhost:3000/out/data");
+    const data = await res.json();
+
+    filteredData = data.filter(item =>
+        item.name.toLowerCase().includes(searchValue)
+    );
+
+    currentPage = 1;
+
+    renderRows();
+}
+
+function renderRows() {
+
+    const tablebody = document.getElementById("tablebody");
+
+    tablebody.innerHTML = "";
+
+    const totalPages =
+        Math.ceil(filteredData.length / rowsPerPage) || 1;
+
+    const startIndex =
+        (currentPage - 1) * rowsPerPage;
+
+    const endIndex =
+        startIndex + rowsPerPage;
+
+    const paginatedItems =
+        filteredData.slice(startIndex, endIndex);
+
+    paginatedItems.forEach(item => {
+
+        let status = "";
+
+        if (Number(item.receivedQty) == 0) {
+
+            status = "🔴 Not Received";
+
         }
-    }
 
-    // Client-side text array matching query
-    window.searchData = function() {
-        const searchValue = document.getElementById("searchName").value.toLowerCase();
-        window.filteredData = rawCloudData.filter(item =>
-            item.name.toLowerCase().includes(searchValue)
+        else if (Number(item.pendingQty) == 0) {
+
+            status = "🟢 Completed";
+
+        }
+
+        else {
+
+            status = "🟡 Partial";
+
+        }
+
+        tablebody.innerHTML += `
+
+<tr>
+
+<td><strong>${item.name}</strong></td>
+
+<td>${item.date}</td>
+
+<td>${item.sudam}</td>
+
+<td>${item.qty}</td>
+
+<td>${item.receivedQty}</td>
+
+<td>${item.pendingQty}</td>
+
+<td style="font-weight:bold;">
+${status}
+</td>
+
+<td>
+
+<button
+class="action-btn edit-btn"
+onclick="editData(${item.id})">
+Edit
+</button>
+
+<button
+class="action-btn delete-btn"
+onclick="deleteData(${item.id})">
+Delete
+</button>
+
+<button
+class="action-btn receive-btn"
+onclick="receiveItem('${item.name}','${item.sudam}')">
+Receive
+</button>
+
+</td>
+
+</tr>
+
+`;
+    });
+
+    document.getElementById("pageInfo").innerHTML =
+        `Page ${currentPage} of ${totalPages}`;
+
+    document.getElementById("btnPrev").disabled =
+        currentPage == 1;
+
+    document.getElementById("btnNext").disabled =
+        currentPage == totalPages;
+
+}
+function changePage(direction) {
+
+    currentPage += direction;
+
+    renderRows();
+
+}
+
+async function deleteData(id) {
+
+    if (confirm("Are you sure to delete this record?")) {
+
+        await fetch(
+            `http://localhost:3000/out/delete/${id}`,
+            {
+                method: "DELETE"
+            }
         );
-        window.currentPage = 1;
-        renderRows();
+
+        displayTable();
+
     }
 
-    // Calculate pagination rules and append markup rows
-    function renderRows() {
-        const tablebody = document.getElementById("tablebody");
-        tablebody.innerHTML = "";
+}
 
-        const totalPages = Math.ceil(window.filteredData.length / rowsPerPage) || 1;
-        const startIndex = (window.currentPage - 1) * rowsPerPage;
-        const endIndex = startIndex + rowsPerPage;
-        const paginatedItems = window.filteredData.slice(startIndex, endIndex);
+function editData(id) {
 
-        paginatedItems.forEach(item => {
-            // Safe fallback value injection if fields aren't initialized yet in database
-            const outQty = Number(item.qty) || 0;
-            const receivedQty = Number(item.receivedQty) || 0;
-            const pendingQty = Number(item.pendingQty) !== undefined ? Number(item.pendingQty) : (outQty - receivedQty);
+    window.location.href =
+        `out.html?edit=${id}`;
 
-            let status = "";
-            if (receivedQty === 0) {
-                status = "🔴 Not Received";
-            } else if (pendingQty === 0) {
-                status = "🟢 Completed";
-            } else {
-                status = "🟡 Partial";
-            }
+}
 
-            tablebody.innerHTML += `
-                <tr>
-                    <td><strong>${item.name}</strong></td>
-                    <td>${item.date}</td>
-                    <td>${item.sudam}</td>
-                    <td>${outQty}</td>
-                    <td>${receivedQty}</td>
-                    <td>${pendingQty}</td>
-                    <td style="font-weight:bold;">${status}</td>
-                    <td>
-                        <button class="action-btn edit-btn" onclick="editData('${item.id}')">Edit</button>
-                        <button class="action-btn delete-btn" onclick="deleteData('${item.id}')">Delete</button>
-                        <button class="action-btn receive-btn" onclick="receiveItem('${item.name}','${item.sudam}')">Receive</button>
-                    </td>
-                </tr>
-            `;
-        });
+function receiveItem(name, sudam) {
 
-        document.getElementById("pageInfo").innerHTML = `Page ${window.currentPage} of ${totalPages}`;
-        document.getElementById("btnPrev").disabled = window.currentPage == 1;
-        document.getElementById("btnNext").disabled = window.currentPage == totalPages;
-    }
+    window.location.href =
+        `intable.html?name=${encodeURIComponent(name)}&item=${encodeURIComponent(sudam)}`;
 
-    window.changePage = function(direction) {
-        window.currentPage += direction;
-        renderRows();
-    }
-
-    // Direct Firestore collection entry removal
-    window.deleteData = async function(id) {
-        if (confirm("Are you sure to delete this record?")) {
-            try {
-                await deleteDoc(doc(db, "out_records", id));
-                displayTable(); // re-sync local arrays
-            } catch (err) {
-                console.error("Deletion error: ", err);
-                alert("Could not remove document cleanly from the server.");
-            }
-        }
-    }
-
-    window.editData = function(id) {
-        // String alphanumeric ID hashes work perfectly inside URL queries
-        window.location.href = `out.html?edit=${id}`;
-    }
-
-    window.receiveItem = function(name, sudam) {
-        window.location.href = `intable.html?name=${encodeURIComponent(name)}&item=${encodeURIComponent(sudam)}`;
-    }
-
-    // Load table data immediately upon opening screen
-    document.addEventListener("DOMContentLoaded", displayTable);
+}
 </script>
 
 </body>

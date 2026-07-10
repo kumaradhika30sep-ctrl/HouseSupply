@@ -71,7 +71,7 @@ app.post('/customer/add', (req, res) => {
 
                 res.json({
                     message:"Customer Added Successfully."
-                });
+                }); 
 
             });
 

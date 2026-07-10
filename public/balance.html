@@ -224,9 +224,8 @@
 </div>
 
 <div class="search-container">
-    <input type="text" id="searchName" placeholder="Filter by Customer Name..." list="customerList">
-    <datalist id="customerList"></datalist> 
-    <input type="text" id="searchItem" placeholder="Filter by Item Name...">
+    <input type="text" id="searchName" placeholder="Filter by Customer Name..." list="customerList" onkeyup="filterData()">
+    <datalist id="customerList"></datalist> <input type="text" id="searchItem" placeholder="Filter by Item Name..." onkeyup="filterData()">
 </div>
 
 <div class="display-container">
@@ -244,159 +243,83 @@
     </table>
 
     <div class="pagination">
-        <button id="btnPrev">Previous</button>
+        <button id="btnPrev" onclick="changePage(-1)">Previous</button>
         <span id="pageInfo">Page 1 of 1</span>
-        <button id="btnNext">Next</button>
+        <button id="btnNext" onclick="changePage(1)">Next</button>
     </div>
 </div>
 
-<!-- Firebase Modular Integration SDKs -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // Update with your project configuration
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let masterRecords = []; // Holds computed balance metrics globally
-    let filteredRecords = []; // Tracking records post text filters
+<script>
+    let allRecords = [];
     let currentPage = 1;
     const rowsPerPage = 10;
 
-    // Initialization lifecycle
-    document.addEventListener('DOMContentLoaded', async () => {
-        await processBalanceSheetData();
-        setupInputFilters();
-        setupPaginationControls();
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchBalanceData();
+        loadCustomerDropdown(); 
     });
 
-    // Fetches collections directly from Firestore and maps calculations
-    async function processBalanceSheetData() {
+    async function loadCustomerDropdown() {
         try {
-            // Read raw entries across streams
-            const outSnapshot = await getDocs(collection(db, "out"));
-            const inSnapshot = await getDocs(collection(db, "in"));
+            const res = await fetch('http://localhost:3000/out/data');
+            const data = await res.json();
+            const customerList = document.getElementById('customerList');
+            
+            const uniqueNames = [...new Set(data.map(item => item.name))];
+            customerList.innerHTML = uniqueNames.map(name => `<option value="${name}">`).join('');
+        } catch (error) {
+            console.error("Error loading dropdown suggestions:", error);
+        }
+    }
 
-            const aggregationMap = {};
+    async function fetchBalanceData() {
+        const nameVal = document.getElementById('searchName').value;
+        const itemVal = document.getElementById('searchItem').value;
 
-            // Accumulate out quantities
-            outSnapshot.forEach(doc => {
-                const data = doc.data();
-                const name = data.name ? data.name.trim() : "Unknown";
-                const item = data.item ? data.item.trim() : "Unknown Item";
-                const qty = Number(data.qty) || 0;
-                const compositeKey = `${name}|||${item}`;
+        try {
+            const res = await fetch(`http://localhost:3000/balance/data?name=${encodeURIComponent(nameVal)}&item=${encodeURIComponent(itemVal)}`);
+            const data = await res.json();
 
-                if (!aggregationMap[compositeKey]) {
-                    aggregationMap[compositeKey] = { name, item, total_out: 0, total_in: 0 };
-                }
-                aggregationMap[compositeKey].total_out += qty;
-            });
+            allRecords = data.records;
+            currentPage = 1;
 
-            // Accumulate in quantities
-            inSnapshot.forEach(doc => {
-                const data = doc.data();
-                const name = data.name ? data.name.trim() : "Unknown";
-                const item = data.item ? data.item.trim() : "Unknown Item";
-                const qty = Number(data.qty) || 0;
-                const compositeKey = `${name}|||${item}`;
+            document.getElementById('statCustomers').innerText = data.summary.totalCustomers;
+            document.getElementById('statOut').innerText = data.summary.globalTotalOut;
+            document.getElementById('statIn').innerText = data.summary.globalTotalIn;
 
-                if (!aggregationMap[compositeKey]) {
-                    aggregationMap[compositeKey] = { name, item, total_out: 0, total_in: 0 };
-                }
-                aggregationMap[compositeKey].total_in += qty;
-            });
+            const balElement = document.getElementById('statBalance');
 
-            // Flatten structure and process mathematical differences
-            masterRecords = Object.values(aggregationMap).map(record => {
-                // balance = out - in
-                const computedBalance = record.total_out - record.total_in;
-                return {
-                    ...record,
-                    balance: computedBalance
-                };
-            });
+            if (data.summary.globalTotalBalance > 0) {
+                balElement.innerText = "-" + data.summary.globalTotalBalance;
+                balElement.className = "negative-balance";
+            } else if (data.summary.globalTotalBalance < 0) {
+                balElement.innerText = Math.abs(data.summary.globalTotalBalance);
+                balElement.className = "positive-balance";
+            } else {
+                balElement.innerText = "0";
+                balElement.className = "";
+            }
 
-            // Populate the dropdown helper list with unique user entries
-            const uniqueCustomerNames = [...new Set(masterRecords.map(r => r.name))];
-            const datalist = document.getElementById('customerList');
-            datalist.innerHTML = uniqueCustomerNames.map(name => `<option value="${name}">`).join('');
-
-            // Apply filter context down to visualization render layers
-            applyUIFilters();
+            renderTableRows();
 
         } catch (error) {
-            console.error("Firestore balance process initialization failure:", error);
+            console.error("Error loading balance dataset:", error);
         }
     }
 
-    // Handles filtering matching local arrays instantly
-    function applyUIFilters() {
-        const nameQuery = document.getElementById('searchName').value.toLowerCase();
-        const itemQuery = document.getElementById('searchItem').value.toLowerCase();
-
-        filteredRecords = masterRecords.filter(record => {
-            const matchName = record.name.toLowerCase().includes(nameQuery);
-            const matchItem = record.item.toLowerCase().includes(itemQuery);
-            return matchName && matchItem;
-        });
-
-        currentPage = 1;
-        updateSummaryCards(filteredRecords);
-        renderTableRows();
+    function filterData() {
+        fetchBalanceData();
     }
 
-    // Updates calculation panels metrics dynamically
-    function updateSummaryCards(recordsList) {
-        const uniqueCustomers = new Set(recordsList.map(r => r.name)).size;
-        let runningTotalOut = 0;
-        let runningTotalIn = 0;
-        let runningGlobalBalance = 0;
-
-        recordsList.forEach(r => {
-            runningTotalOut += r.total_out;
-            runningTotalIn += r.total_in;
-            runningGlobalBalance += r.balance;
-        });
-
-        document.getElementById('statCustomers').innerText = uniqueCustomers;
-        document.getElementById('statOut').innerText = runningTotalOut;
-        document.getElementById('statIn').innerText = runningTotalIn;
-
-        const balElement = document.getElementById('statBalance');
-
-        if (runningGlobalBalance > 0) {
-            balElement.innerText = "-" + runningGlobalBalance;
-            balElement.className = "negative-balance";
-        } else if (runningGlobalBalance < 0) {
-            balElement.innerText = Math.abs(runningGlobalBalance);
-            balElement.className = "positive-balance";
-        } else {
-            balElement.innerText = "0";
-            balElement.className = "";
-        }
-    }
-
-    // Displays relevant records per active index configuration
     function renderTableRows() {
         const tablebody = document.getElementById('tablebody');
         tablebody.innerHTML = "";
 
-        const totalPages = Math.ceil(filteredRecords.length / rowsPerPage) || 1;
+        const totalPages = Math.ceil(allRecords.length / rowsPerPage) || 1;
         const startIndex = (currentPage - 1) * rowsPerPage;
         const endIndex = startIndex + rowsPerPage;
 
-        const paginatedItems = filteredRecords.slice(startIndex, endIndex);
+        const paginatedItems = allRecords.slice(startIndex, endIndex);
 
         if (paginatedItems.length === 0) {
             tablebody.innerHTML = `
@@ -411,13 +334,15 @@
                 let balanceText = "";
                 let balanceClass = "";
 
-                if (item.balance > 0) {
+                if (Number(item.balance) > 0) {
                     balanceText = "-" + item.balance;
                     balanceClass = "negative-balance";
-                } else if (item.balance < 0) {
+                }
+                else if (Number(item.balance) < 0) {
                     balanceText = Math.abs(item.balance);
                     balanceClass = "positive-balance";
-                } else {
+                }
+                else {
                     balanceText = "0";
                     balanceClass = "";
                 }
@@ -443,27 +368,9 @@
         document.getElementById('btnNext').disabled = (currentPage === totalPages);
     }
 
-    // Event hooks and listeners assignment
-    function setupInputFilters() {
-        document.getElementById('searchName').addEventListener('keyup', applyUIFilters);
-        document.getElementById('searchItem').addEventListener('keyup', applyUIFilters);
-    }
-
-    function setupPaginationControls() {
-        document.getElementById('btnPrev').addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                renderTableRows();
-            }
-        });
-
-        document.getElementById('btnNext').addEventListener('click', () => {
-            const totalPages = Math.ceil(filteredRecords.length / rowsPerPage) || 1;
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderTableRows();
-            }
-        });
+    function changePage(direction) {
+        currentPage += direction;
+        renderTableRows();
     }
 </script>
 </body>

@@ -160,252 +160,248 @@
 
 <body>
     <div class="top-bar">
-        <a href="dashboard.html" class="btn-back">← Back to Dashboard</a>
-    </div>
-    
-    <div class="display-container" style="margin-bottom:20px;">
-        <h2 style="margin-bottom:15px;">Receive Material</h2>
+    <a href="dashboard.html" class="btn-back">← Back to Dashboard</a>
+</div>
+<div class="display-container" style="margin-bottom:20px;">
 
-        <div class="search-box" style="width:100%;margin:0;">
-            <input type="text" id="receiveName" placeholder="Customer Name" readonly>
-        </div>
+    <h2 style="margin-bottom:15px;">Receive Material</h2>
 
-        <div class="search-box" style="width:100%;margin-top:10px;">
-            <input type="text" id="receiveItem" placeholder="Item" readonly>
-        </div>
-
-        <div class="search-box" style="width:100%;margin-top:10px;">
-            <input type="date" id="receiveDate">
-        </div>
-
-        <div class="search-box" style="width:100%;margin-top:10px;">
-           <input type="number" id="receiveQty" placeholder="Receive Qty" onkeydown="submitOnEnter(event)">
-        </div>
-
-        <button class="btn-back" style="margin-top:15px;" onclick="submitReceive()">
-            Submit
-        </button>
+    <div class="search-box" style="width:100%;margin:0;">
+        <input type="text" id="receiveName" placeholder="Customer Name" readonly>
     </div>
 
-    <div class="search-box">
-        <input type="text" id="searchName" placeholder="Search Customer..." onkeyup="searchData()">
+    <div class="search-box" style="width:100%;margin-top:10px;">
+        <input type="text" id="receiveItem" placeholder="Item" readonly>
     </div>
 
-    <div class="display-container">
-        <table id="stocktable">
-            <thead>
-                <tr>
-                    <th>CustomerName</th>
-                    <th>Date</th>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Days Taken</th>
-                    <th>Qty Difference</th>
-                </tr>
-            </thead>
-            <tbody id="tablebody"></tbody>
-        </table>
-
-        <div class="pagination">
-            <button id="btnPrev" onclick="changePage(-1)">Previous</button>
-            <span id="pageInfo">Page 1 of 1</span>
-            <button id="btnNext" onclick="changePage(1)">Next</button>
-        </div>
+    <div class="search-box" style="width:100%;margin-top:10px;">
+        <input type="date" id="receiveDate">
     </div>
 
-<!-- Firebase Script Execution Modules -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, query, where, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <div class="search-box" style="width:100%;margin-top:10px;">
+       <input
+    type="number"
+    id="receiveQty"
+    placeholder="Receive Qty"
+    onkeydown="submitOnEnter(event)">
+    </div>
 
-    // Keep configuration consistent across all screens
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+    <button class="btn-back"
+            style="margin-top:15px;"
+            onclick="submitReceive()">
+        Submit
+    </button>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+</div>
 
-    let rawInCloudData = [];
-    window.filteredData = [];
-    window.currentPage = 1;
-    const rowsPerPage = 7;
+<div class="search-box">
+    ...
+</div>
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const params = new URLSearchParams(window.location.search);
-        const name = params.get("name");
-        const item = params.get("item");
-        
-        document.getElementById("receiveName").value = name || "";
-        document.getElementById("receiveItem").value = item || "";
-        document.getElementById("receiveDate").value = new Date().toISOString().split("T")[0];
+<div class="display-container">
+    <table id="stocktable">
+        <thead>
+            <tr>
+                <th>CustomerName</th>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Days Taken</th>
+                <th>Qty Difference</th>
+            </tr>
+        </thead>
+        <tbody id="tablebody"></tbody>
+    </table>
 
-        refreshAllData();
+    <div class="pagination">
+        <button id="btnPrev" onclick="changePage(-1)">Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="btnNext" onclick="changePage(1)">Next</button>
+    </div>
+    <button class="btn-back"
+        style="margin-top:15px;"
+        onclick="submitReceive()">
+    Submit
+</button>
+</div>
+
+<script>
+let filteredData = [];
+let currentPage = 1;
+const rowsPerPage = 7;
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const name = params.get("name");
+    const item = params.get("item");
+    document.getElementById("receiveName").value = name || "";
+    document.getElementById("receiveItem").value = item || "";
+    document.getElementById("receiveDate").value =
+        new Date().toISOString().split("T")[0];
+
+    refreshAllData();
+
+});
+
+async function refreshAllData() {
+    await loadCustomerNames();
+    await displayTable();
+}
+
+async function loadCustomerNames() {
+    try {
+        const res = await fetch('http://localhost:3000/out/data');
+        const data = await res.json();
+
+        const customerList = document.getElementById('customerList');
+        const uniqueNames = [...new Set(data.map(item => item.name))];
+
+        customerList.innerHTML = uniqueNames.map(name => `<option value="${name}">`).join('');
+    } catch (error) {
+        console.error("Error loading customer list options:", error);
+    }
+}
+
+async function displayTable(){
+    try {
+        const res = await fetch('http://localhost:3000/in/data');
+        filteredData = await res.json();
+        currentPage = 1;
+        renderRows();
+    } catch (error) {
+        console.error("Error displaying table data:", error);
+    }
+}
+
+async function searchData() {
+    const searchValue = document.getElementById('searchName').value.trim().toLowerCase();
+
+    const res = await fetch('http://localhost:3000/in/data');
+    const data = await res.json();
+
+    if (searchValue === "") {
+        filteredData = data;
+    } else {
+        filteredData = data.filter(item => item.name.toLowerCase().includes(searchValue));
+    }
+
+    currentPage = 1;
+    renderRows();
+}
+
+function renderRows() {
+    const tablebody = document.getElementById('tablebody');
+    tablebody.innerHTML = "";
+
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage) || 1;
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const paginatedItems = filteredData.slice(startIndex, endIndex);
+
+    paginatedItems.forEach(item => {
+        let diffClass = "";
+        if(item.qty_difference !== null && item.qty_difference !== undefined) {
+            diffClass = item.qty_difference < 0 ? "negative-diff" : (item.qty_difference > 0 ? "positive-diff" : "");
+        }
+
+        tablebody.innerHTML += `
+        <tr>
+            <td><strong>${item.name}</strong></td>
+            <td>${item.date ? item.date.split('T')[0] : '-'}</td>
+            <td>${item.sudam}</td>
+            <td>${item.qty}</td>
+            <td>${item.days_taken ?? '-'}</td>
+            <td class="${diffClass}">${item.qty_difference ?? '-'}</td>
+        </tr>`;
     });
 
-    window.refreshAllData = async function() {
-        await displayTable();
+    document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById('btnPrev').disabled = (currentPage === 1);
+    document.getElementById('btnNext').disabled = (currentPage === totalPages);
+}
+
+function changePage(direction) {
+    currentPage += direction;
+    renderRows();
+}
+
+async function submitReceive() {
+
+    const name = document.getElementById("receiveName").value;
+    const sudam = document.getElementById("receiveItem").value;
+    const date = document.getElementById("receiveDate").value;
+    const qty = document.getElementById("receiveQty").value;
+
+    if (!date || !qty) {
+        alert("Please enter Date and Quantity");
+        return;
     }
 
-    // Pull directly from Firestore "in_records" collection
-    window.displayTable = async function(){
-        try {
-            const querySnapshot = await getDocs(collection(db, "in_records"));
-            rawInCloudData = [];
-            querySnapshot.forEach((doc) => {
-                rawInCloudData.push({ id: doc.id, ...doc.data() });
-            });
-            window.filteredData = [...rawInCloudData];
-            window.currentPage = 1;
-            renderRows();
-        } catch (error) {
-            console.error("Error displaying table data:", error);
-        }
-    }
+    try {
 
-    window.searchData = function() {
-        const searchValue = document.getElementById('searchName').value.trim().toLowerCase();
-        if (searchValue === "") {
-            window.filteredData = [...rawInCloudData];
-        } else {
-            window.filteredData = rawInCloudData.filter(item => item.name.toLowerCase().includes(searchValue));
-        }
-        window.currentPage = 1;
-        renderRows();
-    }
+        const response = await fetch("http://localhost:3000/in/add", {
 
-    function renderRows() {
-        const tablebody = document.getElementById('tablebody');
-        tablebody.innerHTML = "";
+            method: "POST",
 
-        const totalPages = Math.ceil(window.filteredData.length / rowsPerPage) || 1;
-        const startIndex = (window.currentPage - 1) * rowsPerPage;
-        const endIndex = startIndex + rowsPerPage;
-        const paginatedItems = window.filteredData.slice(startIndex, endIndex);
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-        paginatedItems.forEach(item => {
-            let diffClass = "";
-            const diff = item.qty_difference;
-            if(diff !== null && diff !== undefined) {
-                diffClass = diff < 0 ? "negative-diff" : (diff > 0 ? "positive-diff" : "");
-            }
+            body: JSON.stringify({
+                name,
+                date,
+                sudam,
+                qty
+            })
 
-            tablebody.innerHTML += `
-            <tr>
-                <td><strong>${item.name}</strong></td>
-                <td>${item.date ? item.date.split('T')[0] : '-'}</td>
-                <td>${item.sudam}</td>
-                <td>${item.qty}</td>
-                <td>${item.days_taken ?? '-'}</td>
-                <td class="${diffClass}">${diff ?? '-'}</td>
-            </tr>`;
         });
 
-        document.getElementById('pageInfo').innerText = `Page ${window.currentPage} of ${totalPages}`;
-        document.getElementById('btnPrev').disabled = (window.currentPage === 1);
-        document.getElementById('btnNext').disabled = (window.currentPage === totalPages);
-    }
+        const result = await response.json();
 
-    window.changePage = function(direction) {
-        window.currentPage += direction;
-        renderRows();
-    }
+        if (response.ok) {
 
-    window.submitReceive = async function() {
-        const name = document.getElementById("receiveName").value;
-        const sudam = document.getElementById("receiveItem").value;
-        const date = document.getElementById("receiveDate").value;
-        const qtyInput = document.getElementById("receiveQty").value;
+    alert(result.message);
 
-        if (!name || !sudam || !date || !qtyInput) {
-            alert("Please enter Customer, Item, Date and Quantity");
-            return;
+    document.getElementById("receiveName").value = "";
+    document.getElementById("receiveItem").value = "";
+    document.getElementById("receiveQty").value = "";
+    document.getElementById("receiveDate").value =
+        new Date().toISOString().split("T")[0];
+
+    window.history.replaceState({}, "", "intable.html");
+
+    refreshAllData();
+
+
+
+        } else {
+
+            alert(result.message);
+
         }
 
-        const qty = Number(qtyInput);
+    } catch (err) {
 
-        try {
-            // Find corresponding record in "out_records" to compute days_taken and differences
-            const outQuery = query(
-                collection(db, "out_records"), 
-                where("name", "==", name), 
-                where("sudam", "==", sudam)
-            );
-            const outSnapshot = await getDocs(outQuery);
+        console.log(err);
 
-            let days_taken = "-";
-            let qty_difference = 0;
-            let targetOutDocId = null;
-            let currentReceivedQty = 0;
-            let targetOutQty = 0;
+        alert("Server Error");
 
-            if (!outSnapshot.empty) {
-                // Pick the first matching record context
-                const outDoc = outSnapshot.docs[0];
-                targetOutDocId = outDoc.id;
-                const outData = outDoc.data();
-                
-                targetOutQty = Number(outData.qty) || 0;
-                currentReceivedQty = Number(outData.receivedQty) || 0;
-
-                // Calculate date delta metrics
-                const dateOut = new Date(outData.date);
-                const dateIn = new Date(date);
-                const diffTime = Math.abs(dateIn - dateOut);
-                days_taken = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                qty_difference = qty - targetOutQty;
-            }
-
-            // Write inside "in_records"
-            await addDoc(collection(db, "in_records"), {
-                name,
-                sudam,
-                date,
-                qty,
-                days_taken,
-                qty_difference
-            });
-
-            // Update balance counters in the source "out_records" document
-            if (targetOutDocId) {
-                const newReceivedTotal = currentReceivedQty + qty;
-                const newPending = Math.max(0, targetOutQty - newReceivedTotal);
-                
-                await updateDoc(doc(db, "out_records", targetOutDocId), {
-                    receivedQty: newReceivedTotal,
-                    pendingQty: newPending
-                });
-            }
-
-            alert("Material received and updated successfully!");
-
-            // Clear visual inputs
-            document.getElementById("receiveName").value = "";
-            document.getElementById("receiveItem").value = "";
-            document.getElementById("receiveQty").value = "";
-            document.getElementById("receiveDate").value = new Date().toISOString().split("T")[0];
-
-            window.history.replaceState({}, "", "intable.html");
-            refreshAllData();
-
-        } catch (err) {
-            console.error(err);
-            alert("Database Error encountered during receipt processing.");
-        }
     }
 
-    window.submitOnEnter = function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            window.submitReceive();
-        }
+}
+function submitOnEnter(event) {
+
+    if (event.key === "Enter") {
+
+        event.preventDefault();
+
+        submitReceive();
+
     }
+
+}
 </script>
 </body>
 </html>

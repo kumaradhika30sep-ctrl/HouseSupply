@@ -3,294 +3,355 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Item Master</title>
+
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: Arial, sans-serif;
-    }
 
-    body {
-        background: linear-gradient(135deg, #16a085, #2980b9);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        padding: 20px;
-    }
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
 
-    .container {
-        width: 900px;
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 10px 30px rgba(0,0,0,.2);
-    }
+body{
+background:linear-gradient(135deg,#16a085,#2980b9);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
 
-    h2 {
-        text-align: center;
-        margin-bottom: 20px;
-        color: #0f766e;
-    }
+.container{
 
-    .form {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
+width:900px;
+background:white;
+border-radius:15px;
+padding:25px;
+box-shadow:0 10px 30px rgba(0,0,0,.2);
 
-    .form input {
-        flex: 1;
-        height: 45px;
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        outline: none;
-    }
+}
 
-    .form input:focus {
-        border-color: #16a085;
-    }
+h2{
 
-    .form button {
-        width: 140px;
-        border: none;
-        background: #0f766e;
-        color: white;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background 0.2s;
-    }
+text-align:center;
+margin-bottom:20px;
+color:#0f766e;
 
-    .form button:hover {
-        background: #115e59;
-    }
+}
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+.form{
 
-    th {
-        background: #0f766e;
-        color: white;
-        padding: 12px;
-    }
+display:flex;
+gap:10px;
+margin-bottom:20px;
 
-    td {
-        padding: 10px;
-        text-align: center;
-        border-bottom: 1px solid #ddd;
-        color: #334155;
-    }
+}
 
-    tr:hover {
-        background: #f5f5f5;
-    }
+.form input{
 
-    .edit {
-        background: #f59e0b;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 5px;
-        cursor: pointer;
-        margin-right: 4px;
-    }
+flex:1;
+height:45px;
+padding:10px;
+font-size:16px;
+border:1px solid #ccc;
+border-radius:8px;
+outline:none;
 
-    .delete {
-        background: #dc2626;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 5px;
-        cursor: pointer;
-    }
+}
 
-    .back {
-        display: inline-block;
-        margin-top: 20px;
-        text-decoration: none;
-        background: #333;
-        color: white;
-        padding: 10px 18px;
-        border-radius: 8px;
-        font-weight: bold;
-    }
+.form button{
+
+width:140px;
+border:none;
+background:#0f766e;
+color:white;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+
+}
+
+.form button:hover{
+
+background:#115e59;
+
+}
+
+table{
+
+width:100%;
+border-collapse:collapse;
+
+}
+
+th{
+
+background:#0f766e;
+color:white;
+padding:12px;
+
+}
+
+td{
+
+padding:10px;
+text-align:center;
+border-bottom:1px solid #ddd;
+
+}
+
+tr:hover{
+
+background:#f5f5f5;
+
+}
+
+.edit{
+
+background:#f59e0b;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:5px;
+cursor:pointer;
+
+}
+
+.delete{
+
+background:#dc2626;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:5px;
+cursor:pointer;
+
+}
+
+.back{
+
+display:inline-block;
+margin-top:20px;
+text-decoration:none;
+background:#333;
+color:white;
+padding:10px 18px;
+border-radius:8px;
+
+}
+
 </style>
+
 </head>
+
 <body>
 
 <div class="container">
-    <h2>Item Master</h2>
-    <div class="form">
-        <input type="text" id="itemName" placeholder="Enter Item Name...">
-        <button id="saveBtn">Save Item</button>
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Item Name</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+<h2>Item Master</h2>
 
-    <a href="dashboard.html" class="back">← Back</a>
+<div class="form">
+
+<input
+type="text"
+id="itemName"
+oninput="this.value=this.value.replace(/[^A-Za-z0-9 .()-]/g,'')">
+<button onclick="saveItem()">
+
+Save Item
+
+</button>
+
 </div>
 
-<!-- Firebase Modular SDK Scripts -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-        getFirestore, 
-        collection, 
-        addDoc, 
-        getDocs, 
-        doc, 
-        updateDoc, 
-        deleteDoc 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<table>
 
-    // Set up your own Firebase app credentials here
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+<thead>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+<tr>
 
-    let editId = null;
+<th>ID</th>
 
-    // Run on startup
-    document.addEventListener("DOMContentLoaded", loadItems);
+<th>Item Name</th>
 
-    // Sanitize input field characters in real time
-    document.getElementById("itemName").addEventListener("input", function() {
-        this.value = this.value.replace(/[^A-Za-z0-9 .()-]/g, '');
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tableBody">
+
+</tbody>
+
+</table>
+
+<a href="dashboard.html" class="back">
+
+← Back
+
+</a>
+
+</div>
+<script>
+
+let editId = null;
+
+document.addEventListener("DOMContentLoaded", loadItems);
+
+async function loadItems(){
+
+    const res = await fetch("http://localhost:3000/item/data");
+
+    const data = await res.json();
+
+    const table = document.getElementById("tableBody");
+
+    table.innerHTML = "";
+
+    data.forEach(item=>{
+
+        table.innerHTML += `
+
+        <tr>
+
+            <td>${item.id}</td>
+
+            <td>${item.item_name}</td>
+
+            <td>
+
+                <button
+                class="edit"
+                onclick="editItem(${item.id},'${item.item_name}')">
+                Edit
+                </button>
+
+                <button
+                class="delete"
+                onclick="deleteItem(${item.id})">
+                Delete
+                </button>
+
+            </td>
+
+        </tr>
+
+        `;
+
     });
 
-    // Handle enter key form submissions
-    document.getElementById("itemName").addEventListener("keypress", function(e) {
-        if (e.key === "Enter") {
-            saveItem();
-        }
+}
+
+async function saveItem(){
+
+    const item_name =
+    document.getElementById("itemName").value.trim();
+
+    if(item_name==""){
+
+        alert("Enter Item Name");
+
+        return;
+
+    }
+
+    let url="";
+    let method="";
+
+    if(editId==null){
+
+        url="http://localhost:3000/item/add";
+
+        method="POST";
+
+    }
+
+    else{
+
+        url=`http://localhost:3000/item/update/${editId}`;
+
+        method="PUT";
+
+    }
+
+    const res = await fetch(url,{
+
+        method:method,
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+            item_name:item_name
+
+        })
+
     });
 
-    document.getElementById("saveBtn").addEventListener("click", saveItem);
+    const data=await res.json();
 
-    // Read items collection list from firestore
-    async function loadItems() {
-        try {
-            const querySnapshot = await getDocs(collection(db, "items"));
-            const table = document.getElementById("tableBody");
-            table.innerHTML = "";
+    alert(data.message);
 
-            querySnapshot.forEach((docSnap) => {
-                const item = docSnap.data();
-                const id = docSnap.id; // Use standard document token hash as unique ID references
+    document.getElementById("itemName").value="";
 
-                // Create row element securely
-                const tr = document.createElement("tr");
-                
-                tr.innerHTML = `
-                    <td><code>${id.substring(0, 8)}...</code></td>
-                    <td>${item.item_name}</td>
-                    <td>
-                        <button class="edit" data-id="${id}" data-name="${item.item_name}">Edit</button>
-                        <button class="delete" data-id="${id}">Delete</button>
-                    </td>
-                `;
-                table.appendChild(tr);
-            });
+    editId=null;
 
-            // Bind click listeners cleanly without global namespace pollutions
-            document.querySelectorAll(".edit").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    editItem(e.target.getAttribute("data-id"), e.target.getAttribute("data-name"));
-                });
-            });
+    document.querySelector(".form button").innerHTML="Save Item";
 
-            document.querySelectorAll(".delete").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    deleteItem(e.target.getAttribute("data-id"));
-                });
-            });
+    loadItems();
 
-        } catch (error) {
-            console.error("Error downloading item dataset listings: ", error);
-        }
-    }
+}
 
-    // Write or Update documents
-    async function saveItem() {
-        const itemNameInput = document.getElementById("itemName");
-        const item_name = itemNameInput.value.trim();
+function editItem(id,name){
 
-        if (item_name === "") {
-            alert("Enter Item Name");
-            return;
-        }
+    editId=id;
 
-        try {
-            if (editId === null) {
-                // Add completely new document snapshot block
-                await addDoc(collection(db, "items"), {
-                    item_name: item_name
-                });
-                alert("Item saved successfully!");
-            } else {
-                // Point straight to specific doc path token to update keys
-                const docRef = doc(db, "items", editId);
-                await updateDoc(docRef, {
-                    item_name: item_name
-                });
-                alert("Item updated successfully!");
+    document.getElementById("itemName").value=name;
+
+    document.querySelector(".form button").innerHTML="Update Item";
+
+    document.getElementById("itemName").focus();
+
+}
+
+async function deleteItem(id){
+
+    if(confirm("Delete this Item ?")){
+
+        await fetch(
+
+            `http://localhost:3000/item/delete/${id}`,
+
+            {
+
+                method:"DELETE"
+
             }
 
-            // Flush local UI variables states back to defaults
-            itemNameInput.value = "";
-            editId = null;
-            document.getElementById("saveBtn").innerHTML = "Save Item";
-            loadItems();
+        );
 
-        } catch (error) {
-            console.error("Error writing item documentation structure states: ", error);
-            alert("Failed to write transaction record changes.");
-        }
+        loadItems();
+
     }
 
-    // Pass data values into form variables parameters
-    function editItem(id, name) {
-        editId = id;
-        document.getElementById("itemName").value = name;
-        document.getElementById("saveBtn").innerHTML = "Update Item";
-        document.getElementById("itemName").focus();
+}
+
+document.getElementById("itemName").addEventListener("keypress",function(e){
+
+    if(e.key==="Enter"){
+
+        saveItem();
+
     }
 
-    // Delete item documents snapshots matches
-    async function deleteItem(id) {
-        if (confirm("Delete this Item?")) {
-            try {
-                await deleteDoc(doc(db, "items", id));
-                loadItems();
-            } catch (error) {
-                console.error("Error executing collection drop commands steps: ", error);
-            }
-        }
-    }
+});
+
 </script>
+
 </body>
 </html>
